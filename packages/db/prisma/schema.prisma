@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+model User {
+  id                  Int                 @id @default(autoincrement())
+  email               String              @unique
+  password            String
+  credits             Int                 @default(0)
+  apiKeys             ApiKey[]
+  onrampTransactions  OnrampTransaction[]
+  conversations       Conversation[]
+}
+
+model ApiKey {
+  id             Int             @id @default(autoincrement())
+  user_id        Int
+  name           String
+  api_key        String          @unique
+  disabled       Boolean         @default(false)
+  deleted        Boolean         @default(false) 
+  user           User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  conversations  Conversation[]
+}
+
+// model Credit {
+//   id       Int   @id @default(autoincrement())
+//   user_id  Int   @unique
+//   credits  Int   @default(0)
+//   user     User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+// }
+
+model OnrampTransaction {
+  id       Int            @id @default(autoincrement())
+  user_id  Int
+  amount   Int
+  status   OnrampStatus
+  user     User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id       Int      @id @default(autoincrement())
+  name     String
+  website  String
+  models   Model[]
+}
+
+model Model {
+  id                     Int                    @id @default(autoincrement())
+  name                   String
+  slug                   String                 
+  company_id             Int
+  company                Company                @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  modelProviderMappings  ModelProviderMapping[]
+}
+
+model Provider {
+  id                     Int                    @id @default(autoincrement())
+  name                   String
+  website                String
+  modelProviderMappings  ModelProviderMapping[]
+}
+
+model ModelProviderMapping {
+  id                 Int             @id @default(autoincrement())
+  model_id           Int
+  provider_id        Int
+  input_token_cost   Decimal
+  output_token_cost  Decimal
+  model              Model           @relation(fields: [model_id], references: [id], onDelete: Cascade)
+  provider           Provider        @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  conversations      Conversation[]
+
+  @@unique([model_id, provider_id])
+}
+
+model Conversation {
+  id                         Int                   @id @default(autoincrement())
+  user_id                    Int
+  api_key_id                 Int
+  model_provider_mapping_id  Int
+  input                      String
+  output                     String
+  inputTokenCount            Int
+  outputTokenCount           Int
+  user                       User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  apiKey                     ApiKey                @relation(fields: [api_key_id], references: [id], onDelete: Cascade)
+  modelProviderMapping       ModelProviderMapping  @relation(fields: [model_provider_mapping_id], references: [id], onDelete: Cascade)
+}
+
+enum OnrampStatus {
+  PROCESSING
+  SUCCESS
+  FAILED
+}
