@@ -28,6 +28,8 @@ model ApiKey {
   api_key        String          @unique
   disabled       Boolean         @default(false)
   deleted        Boolean         @default(false) 
+  lastUsed       DateTime?       
+  creditsConsumed Int             @default(0)
   user           User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   conversations  Conversation[]
 }
